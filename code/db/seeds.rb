@@ -8,12 +8,27 @@
 
 require 'json'
 require 'open-uri'
+require 'pp'
 
-url = "https://raw.githubusercontent.com/maltyeva/iba-cocktails/master/recipes.json"
+
+fakeurl = "https://raw.githubusercontent.com/maltyeva/iba-cocktails/master/recipes.json"
 Cocktail.delete_all if Rails.env.development?
 
-cocktails = JSON.parse(open(url).read)
+LegislatorsURL = "https://theunitedstates.io/congress-legislators/legislators-current.json"
+Legislator.delete_all if Rails.env.development?
 
+cocktails = JSON.parse(open(fakeurl).read)
 cocktails.each do |cocktail|
-  Cocktail.create!(name: cocktail["name"], glass: cocktail["glass"], preparation: cocktail["preparation"])
+  Cocktail.create!(name: cocktail["name"], glass: cocktail["glass"], ingredients: cocktail["ingredients"], preparation: cocktail["preparation"])
+end
+legislators = JSON.parse(open(LegislatorsURL).read)
+legislators.each do |legislator|
+  #unless legislator["id"]["opensecrets"] == nil
+    candSummaryURL = "http://www.opensecrets.org/api/?method=candSummary&cid=" + legislator["id"]["opensecrets"] + "&apikey=" + ENV['openSecretsKey'] + "&output=json"
+    candContrib = "http://www.opensecrets.org/api/?method=candContrib&cid=" + legislator["id"]["opensecrets"] + "&apikey=" + ENV['openSecretsKey'] + "&output=json"
+    candIndustry = "http://www.opensecrets.org/api/?method=candIndustry&cid=" + legislator["id"]["opensecrets"] + "&apikey=" + ENV['openSecretsKey'] + "&output=json"
+    candSummary = JSON.parse(open(candSummaryURL).read)
+  #end
+  #Legislator.create!(name: legislator["name"]["first"] + " " + legislator["name"]["last"], birthday: legislator["bio"]["birthday"], gender: legislator["bio"]["gender"], cycle: candSummary["response"]["summary"]["@attributes"]["cycle"], state: candSummary["response"]["summary"]["@attributes"]["state"], party: candSummary["response"]["summary"]["@attributes"]["party"], total_receipts: candSummary["response"]["summary"]["@attributes"]["total"], spent: candSummary["response"]["summary"]["@attributes"]["spent"], cash_on_hand: candSummary["response"]["summary"]["@attributes"]["cash_on_hand"], debt: candSummary["response"]["summary"]["@attributes"]["debt"], sourceOpenSecrets: candSummary["response"]["summary"]["@attributes"]["source"], candContributors: candContrib, candIndustries: candIndustry)
+
 end
