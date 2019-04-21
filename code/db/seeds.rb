@@ -10,33 +10,91 @@ require 'json'
 require 'open-uri'
 require 'pp'
 require 'net/http'
-require 'uri'
+require 'httparty'
+nameToProID = {}
 
-proPubListURI = URI.parse("https://api.propublica.org/congress/v1/115/senate/members.json")
-listRequest = Net::HTTP::Get.new(proPubListURI)
+Legislator.delete_all if Rails.env.development?
+
+proPubListSURI = URI.parse("https://api.propublica.org/congress/v1/115/senate/members.json")
+proPubListHURI = URI.parse("https://api.propublica.org/congress/v1/115/house/members.json")
+listRequest = Net::HTTP::Get.new(proPubListSURI, 'Content-Type' => 'application/json')
 listRequest["X-Api-Key"] = ENV['proPublicaKey']
 
 req_options = {
-  use_ssl: proPubListURI.scheme == "https",
+  use_ssl: proPubListSURI.scheme == "https",
 }
 
-response = Net::HTTP.start(proPubListURI.hostname, proPubListURI.port, req_options) do |http|
-  http.request(listRequest)
+Net::HTTP.start(proPubListSURI.hostname, proPubListSURI.port, req_options) do |http|
+  senators = http.request(listRequest)
+  senatorsJSON = JSON.parse(senators.body)
+  senatorsJSON["results"][0]["members"].each do |senator|
+    nameToProID[senator["first_name"] + " " + senator["last_name"]] = senator["id"]
+  end
 end
 
-puts response.code
-puts response.body
-=begin
+listRequest = Net::HTTP::Get.new(proPubListHURI, 'Content-Type' => 'application/json')
+listRequest["X-Api-Key"] = ENV['proPublicaKey']
+
+req_options = {
+  use_ssl: proPubListHURI.scheme == "https",
+}
+
+Net::HTTP.start(proPubListHURI.hostname, proPubListHURI.port, req_options) do |http|
+  reps = http.request(listRequest)
+  repsJSON = JSON.parse(reps.body)
+  repsJSON["results"][0]["members"].each do |rep|
+    nameToProID[rep["first_name"] + " " + rep["last_name"]] = rep["id"]
+  end
+end
+
 LegislatorsURL = "https://theunitedstates.io/congress-legislators/legislators-current.json"
-Legislator.delete_all if Rails.env.development?
 
 legislators = JSON.parse(open(LegislatorsURL).read)
 legislators.each do |legislator|
-  candSummaryURL = "http://www.opensecrets.org/api/?method=candSummary&cid=" + legislator["id"]["opensecrets"] + "&apikey=" + ENV['openSecretsKey'] + "&output=json"
-  candContrib = "http://www.opensecrets.org/api/?method=candContrib&cid=" + legislator["id"]["opensecrets"] + "&apikey=" + ENV['openSecretsKey'] + "&output=json"
-  candIndustry = "http://www.opensecrets.org/api/?method=candIndustry&cid=" + legislator["id"]["opensecrets"] + "&apikey=" + ENV['openSecretsKey'] + "&output=json"
-  candSummary = JSON.parse(open(candSummaryURL).read)
-  Legislator.create!(name: legislator["name"]["first"] + " " + legislator["name"]["last"], birthday: legislator["bio"]["birthday"], gender: legislator["bio"]["gender"], cycle: candSummary["response"]["summary"]["@attributes"]["cycle"], state: candSummary["response"]["summary"]["@attributes"]["state"], party: candSummary["response"]["summary"]["@attributes"]["party"], total_receipts: candSummary["response"]["summary"]["@attributes"]["total"], spent: candSummary["response"]["summary"]["@attributes"]["spent"], cash_on_hand: candSummary["response"]["summary"]["@attributes"]["cash_on_hand"], debt: candSummary["response"]["summary"]["@attributes"]["debt"], sourceOpenSecrets: candSummary["response"]["summary"]["@attributes"]["source"], candContributors: candContrib, candIndustries: candIndustry)
+  unless nameToProID[legislator["name"]["first"] + " " + legislator["name"]["last"]] == nil
+    positionURI = URI.parse("https://api.propublica.org/congress/v1/members/" + nameToProID[legislator["name"]["first"] + " " + legislator["name"]["last"]] + "/votes.json")
+    voteRequest = Net::HTTP::Get.new(positionURI)
+    voteRequest["X-Api-Key"] = ENV['proPublicaKey']
 
+    req_options = {
+      use_ssl: positionURI.scheme == "https",
+    }
+
+    positions = Net::HTTP.start(positionURI.hostname, positionURI.port, req_options) do |http|
+      http.request(voteRequest)   
+    end
+    positionsJSON = JSON.parse(positions.body)
+    
+    candSummary = {}
+    contribJSON = {}
+    industryJSON = {}
+    #unless legislator["id"]["opensecrets"] == nil 
+    candSummary = HTTParty.get('https://www.opensecrets.org/api/?method=candSummary&cid=' + legislator["id"]["opensecrets"] + '&apikey=' + ENV['openSecretsKey'] + '&output=json')
+    #candSummary = JSON.parse(open(candSummaryURL).read)
+    candSummaryJSON = JSON.parse(candSummary.body)
+    candContrib = HTTParty.get('https://www.opensecrets.org/api/?method=candContrib&cid=' + legislator["id"]["opensecrets"] + '&apikey=' + ENV['openSecretsKey'] + '&output=json')
+    #contribJSON = JSON.parse(open(candContrib).read)
+    contribJSON = JSON.parse(candContrib.body)
+    candIndustry = HTTParty.get('https://www.opensecrets.org/api/?method=candIndustry&cid=' + legislator["id"]["opensecrets"] + '&apikey=' + ENV['openSecretsKey'])
+    #end
+    puts legislator["terms"][legislator["terms"].length - 1]["contact_form"] 
+    puts candSummaryJSON["response"]["summary"]["@attributes"]["cycle"]
+    Legislator.create!(name: legislator["name"]["first"] + " " + legislator["name"]["last"],
+      title: legislator["terms"][legislator["terms"].length - 1]["type"],
+      birthday: legislator["bio"]["birthday"], gender: legislator["bio"]["gender"],
+      cycle: candSummaryJSON["response"]["summary"]["@attributes"]["cycle"],
+      state: candSummaryJSON["response"]["summary"]["@attributes"]["state"],
+      party: candSummaryJSON["response"]["summary"]["@attributes"]["party"],
+      total_receipts: candSummaryJSON["response"]["summary"]["@attributes"]["total"],
+      spent: candSummaryJSON["response"]["summary"]["@attributes"]["spent"],
+      cash_on_hand: candSummaryJSON["response"]["summary"]["@attributes"]["cash_on_hand"],
+      debt: candSummaryJSON["response"]["summary"]["@attributes"]["debt"],
+      sourceOpenSecrets: candSummaryJSON["response"]["summary"]["@attributes"]["source"],
+      candContributors: contribJSON,
+      candIndustries: candIndustry.body,
+      positions: positionsJSON, 
+      contact_form: legislator["terms"][legislator["terms"].length - 1]["contact_form"], 
+      address: legislator["terms"][legislator["terms"].length - 1]["address"],
+      phone: legislator["terms"][legislator["terms"].length - 1]["phone"])
+  end
 end
-=end
