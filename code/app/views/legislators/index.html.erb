@@ -10,7 +10,7 @@
       <% end %>
       <% @legislators.each do |legislator| %>
         <h3><%= legislator.name %></h3>
-        <p><%= link_to 'Show', legislators_path(legislator), class: 'link link--underlined' %></p>
+        <p><%= link_to 'Show', legislator_path(legislator), class: 'link link--underlined' %></p>
         <p><%= legislator.gender %></p>
         <p><%= legislator.birthday %></p>
       <% end %>
