@@ -15,6 +15,15 @@ ActiveRecord::Schema.define(version: 2019_04_19_204848) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
+  create_table "cocktails", force: :cascade do |t|
+    t.string "name"
+    t.string "glass"
+    t.text "preparation"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.json "ingredients"
+  end
+
   create_table "legislators", force: :cascade do |t|
     t.string "name"
     t.string "title"
@@ -29,7 +38,7 @@ ActiveRecord::Schema.define(version: 2019_04_19_204848) do
     t.float "cash_on_hand"
     t.float "debt"
     t.string "sourceOpenSecrets"
-    t.string "candContributors"
+    t.text "candContributors"
     t.json "candIndustries"
     t.json "positions"
     t.string "contact_form"

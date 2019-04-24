@@ -1,4 +1,4 @@
-#app/views/legislators/index.html.erb
+<%#app/views/legislators/index.html.erb%>
 <div class="container">
   <div class="row">
     <div class="col-xs-12 col-sm-8 offset-sm-2">
@@ -10,7 +10,7 @@
       <% end %>
       <% @legislators.each do |legislator| %>
         <h3><%= legislator.name %></h3>
-        <p><%= legislator.openSecretsID %></p>
+        <p><%= link_to 'Show', legislators_path(legislator), class: 'link link--underlined' %></p>
         <p><%= legislator.gender %></p>
         <p><%= legislator.birthday %></p>
       <% end %>

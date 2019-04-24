@@ -1,29 +1,36 @@
-# This file should contain all the record creation needed to seed the database with its default values.
-# The data can then be loaded with the rails db:seed command (or created alongside the database with db:setup).
-#
-# Examples:
-#
-#   movies = Movie.create([{ name: 'Star Wars' }, { name: 'Lord of the Rings' }])
-#   Character.create(name: 'Luke', movie: movies.first)
 
 require 'json'
 require 'open-uri'
 require 'pp'
 require 'net/http'
 require 'httparty'
+
+url = "https://raw.githubusercontent.com/maltyeva/iba-cocktails/master/recipes.json"
+Cocktail.delete_all if Rails.env.development?
+cocktails = JSON.parse(open(url).read)
+
+cocktails.each do |cocktail|
+  Cocktail.create!(name: cocktail["name"], glass: cocktail["glass"], ingredients: cocktail["ingredients"], preparation: cocktail["preparation"])
+end
+#hash for getting proPublicaID for a legislator
 nameToProID = {}
 
+#delete existing data
 Legislator.delete_all if Rails.env.development?
 
+#Senators only for now
+#URI for executing curl
 proPubListSURI = URI.parse("https://api.propublica.org/congress/v1/115/senate/members.json")
-proPubListHURI = URI.parse("https://api.propublica.org/congress/v1/115/house/members.json")
+#proPubListHURI = URI.parse("https://api.propublica.org/congress/v1/115/house/members.json")
 listRequest = Net::HTTP::Get.new(proPubListSURI, 'Content-Type' => 'application/json')
 listRequest["X-Api-Key"] = ENV['proPublicaKey']
 
+#use ssl
 req_options = {
   use_ssl: proPubListSURI.scheme == "https",
 }
 
+#turn string into json and populate nameToProID
 Net::HTTP.start(proPubListSURI.hostname, proPubListSURI.port, req_options) do |http|
   senators = http.request(listRequest)
   senatorsJSON = JSON.parse(senators.body)
@@ -32,13 +39,16 @@ Net::HTTP.start(proPubListSURI.hostname, proPubListSURI.port, req_options) do |h
   end
 end
 
-listRequest = Net::HTTP::Get.new(proPubListHURI, 'Content-Type' => 'application/json')
-listRequest["X-Api-Key"] = ENV['proPublicaKey']
+#new request
+#listRequest = Net::HTTP::Get.new(proPubListHURI, 'Content-Type' => 'application/json')
+#listRequest["X-Api-Key"] = ENV['proPublicaKey']
 
-req_options = {
-  use_ssl: proPubListHURI.scheme == "https",
-}
+#req_options = {
+ # use_ssl: proPubListHURI.scheme == "https",
+#}
 
+# turn string into json and populate nameToProID
+=begin
 Net::HTTP.start(proPubListHURI.hostname, proPubListHURI.port, req_options) do |http|
   reps = http.request(listRequest)
   repsJSON = JSON.parse(reps.body)
@@ -46,12 +56,16 @@ Net::HTTP.start(proPubListHURI.hostname, proPubListHURI.port, req_options) do |h
     nameToProID[rep["first_name"] + " " + rep["last_name"]] = rep["id"]
   end
 end
+=end
 
 LegislatorsURL = "https://theunitedstates.io/congress-legislators/legislators-current.json"
-
 legislators = JSON.parse(open(LegislatorsURL).read)
+
+i = 0
 legislators.each do |legislator|
-  unless nameToProID[legislator["name"]["first"] + " " + legislator["name"]["last"]] == nil
+  if nameToProID.has_key?(legislator["name"]["first"] + " " + legislator["name"]["last"])
+    puts i
+    i = i + 1
     positionURI = URI.parse("https://api.propublica.org/congress/v1/members/" + nameToProID[legislator["name"]["first"] + " " + legislator["name"]["last"]] + "/votes.json")
     voteRequest = Net::HTTP::Get.new(positionURI)
     voteRequest["X-Api-Key"] = ENV['proPublicaKey']
@@ -66,19 +80,20 @@ legislators.each do |legislator|
     positionsJSON = JSON.parse(positions.body)
     
     candSummary = {}
-    contribJSON = {}
+    contribJSON = {}    
     industryJSON = {}
-    #unless legislator["id"]["opensecrets"] == nil 
-    candSummary = HTTParty.get('https://www.opensecrets.org/api/?method=candSummary&cid=' + legislator["id"]["opensecrets"] + '&apikey=' + ENV['openSecretsKey'] + '&output=json')
-    #candSummary = JSON.parse(open(candSummaryURL).read)
-    candSummaryJSON = JSON.parse(candSummary.body)
-    candContrib = HTTParty.get('https://www.opensecrets.org/api/?method=candContrib&cid=' + legislator["id"]["opensecrets"] + '&apikey=' + ENV['openSecretsKey'] + '&output=json')
-    #contribJSON = JSON.parse(open(candContrib).read)
-    contribJSON = JSON.parse(candContrib.body)
-    candIndustry = HTTParty.get('https://www.opensecrets.org/api/?method=candIndustry&cid=' + legislator["id"]["opensecrets"] + '&apikey=' + ENV['openSecretsKey'])
-    #end
-    puts legislator["terms"][legislator["terms"].length - 1]["contact_form"] 
-    puts candSummaryJSON["response"]["summary"]["@attributes"]["cycle"]
+
+    unless legislator["id"]["opensecrets"] == nil
+      candSummary = HTTParty.get('https://www.opensecrets.org/api/?method=candSummary&cid=' + legislator["id"]["opensecrets"] + '&apikey=' + ENV['openSecretsKey'] + '&output=json')
+      candSummaryJSON = JSON.parse(candSummary.body)
+
+      candContrib = HTTParty.get('https://www.opensecrets.org/api/?method=candContrib&cid=' + legislator["id"]["opensecrets"] + '&apikey=' + ENV['openSecretsKey'] + '&output=json')
+      contribJSON = JSON.parse(candContrib.body)
+
+      candIndustry = HTTParty.get('https://www.opensecrets.org/api/?method=candIndustry&cid=' + legislator["id"]["opensecrets"] + '&apikey=' + ENV['openSecretsKey'])
+      puts candIndustry.body.class
+    end
+
     Legislator.create!(name: legislator["name"]["first"] + " " + legislator["name"]["last"],
       title: legislator["terms"][legislator["terms"].length - 1]["type"],
       birthday: legislator["bio"]["birthday"], gender: legislator["bio"]["gender"],

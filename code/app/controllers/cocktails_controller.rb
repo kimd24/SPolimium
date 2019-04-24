@@ -3,8 +3,8 @@ class CocktailsController < ApplicationController
     @cocktails = Cocktail.all
     @search = params["search"]
     if @search.present?
-      @name = @search["name"]
-      @cocktails = Cocktail.where("name ILIKE ?", "%#{@name}%")
+      @preparation = @search["preparation"]
+      @cocktails = Cocktail.where("preparation ILIKE ? OR name ILIKE ?", "%#{@preparation}%", "%#{@preparation}%")
     end
   end
 end
