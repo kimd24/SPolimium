@@ -22,6 +22,7 @@ class LegislatorsController < ApplicationController
       @query = @search["query"]
       @legislators = Legislator.where("name ILIKE ? OR state ILIKE ?", "%#{@query}%", "%#{@query}%")
       #Try to separate the querys so the search of the state's letters doesn't pull up a senator with those letters in their name
+      #Also add new table in order to allow for legislation searches
     end
   end
 
