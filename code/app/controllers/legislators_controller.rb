@@ -1,50 +1,38 @@
+# Project name: Polimium
+# Description: Search engine for politician data
+# Filename: legislators_controller.rb
+# Description: controller actions for legislators
+# Last modified on: 4/25/2019 
+
 class LegislatorsController < ApplicationController
   before_action only: [:show]
 
+  # Function: index
+  #
+  # Parameters:
+  # String: query for search
+  # 
+  # Precondition: none
+  # Postcondition: Returns all legislators or some legislators based on search
+ 
   def index
     @legislators = Legislator.all
     @search = params["search"]
     if @search.present?
-      @name = @search["name"]
-      @legislators = Legislator.where("name ILIKE ?", "%#{@name}%")
+      @query = @search["query"]
+      @legislators = Legislator.where("name ILIKE ? OR state ILIKE ?", "%#{@query}%", "%#{@query}%")
     end
   end
+
+  # Function: show
+  #
+  # Parameters:
+  # 
+  # Precondition: index has been called
+  # Postcondition: finds a specific legislator based on id
 
   def show
    @legislator = Legislator.find(params[:id])
   end
-  
-  def new
-    @legislator = Legislator.new
-  end
-
-  def edit
-  end
-
-  def create
-    @legislator = Legislator.new(legislator_params)
-    
-    if @legislator.save
-      redirect_to legislator_path(@legislator)
-    else
-      render :new
-    end
-  end
-  
-  def update
-    if @legislator.update(legislator_params)
-      redirect_to legislator_path(@legislator)
-    else
-      render :edit
-    end
-  end
-  
-  private
-    def set_legislator
-      @legislator = Legislator.find(params[:id])
-    end
-    
-    def legislator_params
-      legislator.require(:legislator).permit(:name)
-    end
 end
+

@@ -1,2 +1,0 @@
-class Cocktail < ApplicationRecord
-end

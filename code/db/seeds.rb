@@ -1,3 +1,8 @@
+# Project name: Polimium
+# Description: Search engine for politicans
+# Filename: seeds.rb
+# Description: populates the database by accessing external APIs
+# Last modified on: 4/25/2019
 
 require 'json'
 require 'open-uri'
@@ -5,13 +10,6 @@ require 'pp'
 require 'net/http'
 require 'httparty'
 
-url = "https://raw.githubusercontent.com/maltyeva/iba-cocktails/master/recipes.json"
-Cocktail.delete_all if Rails.env.development?
-cocktails = JSON.parse(open(url).read)
-
-cocktails.each do |cocktail|
-  Cocktail.create!(name: cocktail["name"], glass: cocktail["glass"], ingredients: cocktail["ingredients"], preparation: cocktail["preparation"])
-end
 #hash for getting proPublicaID for a legislator
 nameToProID = {}
 
@@ -39,6 +37,7 @@ Net::HTTP.start(proPubListSURI.hostname, proPubListSURI.port, req_options) do |h
   end
 end
 
+# This part has been omitted due to API call limits
 #new request
 #listRequest = Net::HTTP::Get.new(proPubListHURI, 'Content-Type' => 'application/json')
 #listRequest["X-Api-Key"] = ENV['proPublicaKey']
@@ -58,14 +57,19 @@ Net::HTTP.start(proPubListHURI.hostname, proPubListHURI.port, req_options) do |h
 end
 =end
 
+#Get names of legislators
 LegislatorsURL = "https://theunitedstates.io/congress-legislators/legislators-current.json"
 legislators = JSON.parse(open(LegislatorsURL).read)
 
+#Use basic legislator profiles to create legislator records with additional data
 i = 0
 legislators.each do |legislator|
   if nameToProID.has_key?(legislator["name"]["first"] + " " + legislator["name"]["last"])
+    #track progress of seeding
     puts i
     i = i + 1
+    
+    # curl to ruby
     positionURI = URI.parse("https://api.propublica.org/congress/v1/members/" + nameToProID[legislator["name"]["first"] + " " + legislator["name"]["last"]] + "/votes.json")
     voteRequest = Net::HTTP::Get.new(positionURI)
     voteRequest["X-Api-Key"] = ENV['proPublicaKey']
@@ -79,10 +83,12 @@ legislators.each do |legislator|
     end
     positionsJSON = JSON.parse(positions.body)
     
+    # default jsons/hashes
     candSummary = {}
     contribJSON = {}    
     industryJSON = {}
 
+    # convert responses to hashes
     unless legislator["id"]["opensecrets"] == nil
       candSummary = HTTParty.get('https://www.opensecrets.org/api/?method=candSummary&cid=' + legislator["id"]["opensecrets"] + '&apikey=' + ENV['openSecretsKey'] + '&output=json')
       candSummaryJSON = JSON.parse(candSummary.body)
@@ -94,6 +100,7 @@ legislators.each do |legislator|
       industryJSON = Hash.from_xml(candIndustry.body).to_json
     end
 
+    #create active records
     Legislator.create!(name: legislator["name"]["first"] + " " + legislator["name"]["last"],
       title: legislator["terms"][legislator["terms"].length - 1]["type"],
       birthday: legislator["bio"]["birthday"], gender: legislator["bio"]["gender"],

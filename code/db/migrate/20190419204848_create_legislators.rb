@@ -12,7 +12,7 @@ class CreateLegislators < ActiveRecord::Migration[5.2]
       t.float :debt
       t.string :sourceOpenSecrets
       t.json :candContributors
-      t.string :candIndustries
+      t.json :candIndustries
       t.json :positions
       t.string :openSecretsID
       t.date :birthday
