@@ -38,7 +38,7 @@ ActiveRecord::Schema.define(version: 2019_04_19_204848) do
     t.float "cash_on_hand"
     t.float "debt"
     t.string "sourceOpenSecrets"
-    t.text "candContributors"
+    t.json "candContributors"
     t.json "candIndustries"
     t.json "positions"
     t.string "contact_form"

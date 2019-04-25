@@ -91,7 +91,7 @@ legislators.each do |legislator|
       contribJSON = JSON.parse(candContrib.body)
 
       candIndustry = HTTParty.get('https://www.opensecrets.org/api/?method=candIndustry&cid=' + legislator["id"]["opensecrets"] + '&apikey=' + ENV['openSecretsKey'])
-      puts candIndustry.body.class
+      industryJSON = Hash.from_xml(candIndustry.body).to_json
     end
 
     Legislator.create!(name: legislator["name"]["first"] + " " + legislator["name"]["last"],
@@ -106,7 +106,7 @@ legislators.each do |legislator|
       debt: candSummaryJSON["response"]["summary"]["@attributes"]["debt"],
       sourceOpenSecrets: candSummaryJSON["response"]["summary"]["@attributes"]["source"],
       candContributors: contribJSON,
-      candIndustries: candIndustry.body,
+      candIndustries: industryJSON,
       positions: positionsJSON, 
       contact_form: legislator["terms"][legislator["terms"].length - 1]["contact_form"], 
       address: legislator["terms"][legislator["terms"].length - 1]["address"],

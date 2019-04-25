@@ -1,8 +1,38 @@
-<aside>
 <h1>Legislator Profile<h1>
 
-<p><b>Name:</b><br><%=@legislator.name %></p>
-<p><b>Date of Birth:</b><br><%=@legislator.birthday %></p>
-<p><b>Title:</b><br><%=@legislator.title %></p>
-<p><b>Gender:</b><br><%=@legislator.gender %></p>
-</aside>
+<p><b>Name: </b><%=@legislator.name %></p>
+<p><b>Date of Birth: </b><%=@legislator.birthday %></p>
+<p><b>Title: </b>
+<% if @legislator.title == 'sen'%>
+  <%= "Senator" %>
+<% else %>
+  <%= "Representative" %>
+<% end %>
+</p>
+<p><b>Gender: </b>
+<% if @legislator.gender == 'M' %>
+  <%= "Male" %>
+<% else %>
+  <%= "Female" %>
+<% end %>
+</p>
+<p><b>Cycle: </b><%=@legislator.cycle %></p>
+<p><b>State: </b><%=@legislator.state %></p>
+<p><b>Total Receipts: </b><%=number_to_currency(@legislator.total_receipts, :unit =>"$") %></p>
+<p><b>Total Spent: </b><%=number_to_currency(@legislator.spent, :unit =>"$") %></p>
+<p><b>Cash on Hand: </b><%=number_to_currency(@legislator.cash_on_hand, :unit => "$") %></p>
+<p><b>Debt: </b><%=number_to_currency(@legislator.debt, :unit => "$") %></p>
+<% contribJSON = JSON.parse(@legislator.candContributors) %>
+
+<table>
+  <tr>
+  <th>Organization Name</th> <th>Total</th> <th>PACs</th> <th>Individuals</th>
+  </tr>
+  <% contribJSON["response"]["contributors"]["contributor"].each do | contributor | %>
+    <tr>
+     <td><%= contributor["@attributes"]["org_name"] %></td>
+     <td><%= contributor["@attributes"]["pacs"] %></td>
+     <td><%= contributor["@attributes"]["indivs"] %></td>
+    </tr>
+  <% end %>
+</table>

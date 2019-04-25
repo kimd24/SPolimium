@@ -10,9 +10,23 @@
       <% end %>
       <% @legislators.each do |legislator| %>
         <h3><%= legislator.name %></h3>
-        <p><%= link_to 'Show', legislator_path(legislator), class: 'link link--underlined' %></p>
-        <p><%= legislator.gender %></p>
-        <p><%= legislator.birthday %></p>
+        <p><%= link_to 'Show Details', legislator_path(legislator), class: 'link link--underlined' %></p>
+        <% if legislator.party == 'D' %>
+          <p><%= "Democrat" %></p>
+        <% elsif legislator.party == 'R' %>
+          <p><%= "Republican" %></p>
+        <% elsif legislator.party == '3' %>
+          <p><%= "3rd party" %></p>
+        <% elsif legislator.party == 'L' %>
+          <p><%= "Libertarian" %>
+        <% else %>
+          <p><%= "Unknown" %>
+        <% end %>
+        <% if legislator.title == 'sen' %>
+          <p><%= "Senator" %></p>
+        <% else %>
+          <p><%= "Representative" %></p>
+        <% end %>
       <% end %>
     </div>
   </div>
