@@ -1,0 +1,41 @@
+<!--
+Project name: Polimium
+Description: Search engine for politician data
+Filename: index.html.erb
+Description: Shows search form and list of legislators
+Last modified on: 4/25/2019 
+-->
+
+<div class="container">
+  <div class="row">
+    <div class="col-xs-12 col-sm-8 offset-sm-2">
+      <h1>Legislators</h1>
+      <hr>
+      <%= simple_form_for :search, url: root_path, method: "GET", html: {class: "form-inline" } do |f| %>
+        <%= f.input :query, input_html: {value: ""} %>
+        <%= f.submit "Search", class: "btn btn-primary" %>
+      <% end %>
+      <% @legislators.each do |legislator| %>
+        <h3><%= legislator.name %></h3>
+        <p><%= link_to 'Show Details', legislator_path(legislator), class: 'link link--underlined' %></p>
+        <% if legislator.party == 'D' %>
+          <p><%= "Democrat" %></p>
+        <% elsif legislator.party == 'R' %>
+          <p><%= "Republican" %></p>
+        <% elsif legislator.party == '3' %>
+          <p><%= "3rd party" %></p>
+        <% elsif legislator.party == 'L' %>
+          <p><%= "Libertarian" %>
+        <% else %>
+          <p><%= "Unknown" %>
+        <% end %>
+        <% if legislator.title == 'sen' %>
+          <p><%= "Senator" %></p>
+        <% else %>
+          <p><%= "Representative" %></p>
+        <% end %>
+        <%= legislator.state %>
+      <% end %>
+    </div>
+  </div>
+</div>
