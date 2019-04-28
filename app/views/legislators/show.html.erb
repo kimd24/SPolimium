@@ -1,0 +1,114 @@
+<!--
+Project name: Polimium
+Description: Search engine for politician data
+Filename: show.html.erb
+Description: Shows single legislator
+Last modified on: 4/25/2019 
+-->
+<head>
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+</head>
+
+<h1>Legislator Profile<h1>
+
+<p><b>Name: </b><%=@legislator.name %></p>
+<p><b>Date of Birth: </b><%=@legislator.birthday %></p>
+<p><b>Title: </b>
+<% if @legislator.title == 'sen'%>
+  <%= "Senator" %>
+<% else %>
+  <%= "Representative" %>
+<% end %>
+</p>
+<p><b>Gender: </b>
+<% if @legislator.gender == 'M' %>
+  <%= "Male" %>
+<% else %>
+  <%= "Female" %>
+<% end %>
+</p>
+<p><b>Cycle: </b><%=@legislator.cycle %></p>
+<p><b>State: </b><%=@legislator.state %></p>
+<p><b>Total Receipts: </b><%=number_to_currency(@legislator.total_receipts, :unit =>"$") %></p>
+<p><b>Total Spent: </b><%=number_to_currency(@legislator.spent, :unit =>"$") %></p>
+<p><b>Cash on Hand: </b><%=number_to_currency(@legislator.cash_on_hand, :unit => "$") %></p>
+<p><b>Debt: </b><%=number_to_currency(@legislator.debt, :unit => "$") %></p>
+<p><b>Contact at: </b><%=@legislator.contact_form %></p>
+<p><b>Address: </b><%=@legislator.address %></p>
+<p><b>Phone: </b><%=@legislator.phone %></p>
+
+<!-- Loops over json objects to create tables -->
+<div class="container">
+  <h2>Contributions by Organizations</h2>
+  <div class="table-responsive">
+  <table class = "table">
+    <thead>
+      <tr>
+      <th>Organization Name</th> <th>Total</th> <th>PACs</th> <th>Individuals</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @legislator.candContributors["response"]["contributors"]["contributor"].each do | contributor | %>
+        <tr>
+        <td><%= contributor["@attributes"]["org_name"] %></td>
+        <td><%= contributor["@attributes"]["total"] %></td>
+        <td><%= contributor["@attributes"]["pacs"] %></td>
+        <td><%= contributor["@attributes"]["indivs"] %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  </div>
+
+  <% industriesJSON = JSON.parse(@legislator.candIndustries) %>
+  <h2>Contributions by Industries</h2>
+  <div class="table-responsive">
+  <table class = "table">
+    <thead>
+      <tr>
+      <th>Industry Name</th> <th>Total</th> <th>PACs</th> <th>Individuals</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% industriesJSON["response"]["industries"]["industry"].each do | industry | %>
+        <tr>
+        <td><%= industry["industry_name"] %></td>
+        <td><%= industry["total"] %></td>
+        <td><%= industry["pacs"] %></td>
+        <td><%= industry["indivs"] %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  </div>
+  
+  <h2>Voting Positions</h2>
+  <div class = "table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+      <th>Bill ID</th> <th>Yes</th> <th>No</th> <th>Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @legislator.positions["results"][0]["votes"].each do | vote | %>
+        <tr>
+        <td><%= vote["bill"]["bill_id"] %></td>
+        <% if vote["position"] == "Yes" %>
+        <td><i class="fas fa-check"></i></td>
+        <td></td>
+        <% else %>
+        <td></td>
+        <td><i class="fas fa-check"></i></td>
+        <% end %>
+        <td><%= vote["result"] %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  </div>
+</div>
