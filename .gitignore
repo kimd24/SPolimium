@@ -5,24 +5,24 @@
 #   git config --global core.excludesfile '~/.gitignore_global'
 
 # Ignore bundler config.
-/code/.bundle
+/.bundle
 
 # Ignore all logfiles and tempfiles.
-/code/log/*
-/code/tmp/*
-/code/!/log/.keep
-/code/!/tmp/.keep
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
 
 # Ignore uploaded files in development
-/code/storage/*
-/code/!/storage/.keep
+storage/*
+!/storage/.keep
 
-/code/node_modules
-/code/yarn-error.log
+/node_modules
+/yarn-error.log
 
-/code/public/assets
-/code/.byebug_history
+/public/assets
+/.byebug_history
 
 # Ignore master key for decrypting credentials and more.
-/code/config/master.key
-/code/.env
+/config/master.key
+/.env
