@@ -21,7 +21,7 @@ Legislator.delete_all if Rails.env.development?
 # Senators only for now
 # URI for executing curl
 proPubListSURI = URI.parse('https://api.propublica.org/congress/v1/115/senate/members.json')
-# proPubListHURI = URI.parse("https://api.propublica.org/congress/v1/115/house/members.json")
+#proPubListHURI = URI.parse("https://api.propublica.org/congress/v1/115/house/members.json")
 listRequest = Net::HTTP::Get.new(proPubListSURI, 'Content-Type' => 'application/json')
 listRequest['X-Api-Key'] = ENV['proPublicaKey']
 
