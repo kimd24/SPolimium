@@ -82,4 +82,5 @@ production:
   <<: *default
   database: spoli_production
   username: spoli
+  url: <%= ENV['poliDatabaseURL'] %>
   password: <%= ENV['SPOLI_DATABASE_PASSWORD'] %>
