@@ -13,8 +13,9 @@ Last modified on: 4/25/2019
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
 </head>
 
+<div>
 <h1>Legislator Profile<h1>
-
+</div>
 <p><b>Name: </b><%=@legislator.name %></p>
 <p><b>Date of Birth: </b><%=@legislator.birthday %></p>
 <p><b>Title: </b>
@@ -55,9 +56,9 @@ Last modified on: 4/25/2019
       <% @legislator.candContributors["response"]["contributors"]["contributor"].each do | contributor | %>
         <tr>
         <td><%= contributor["@attributes"]["org_name"] %></td>
-        <td><%= contributor["@attributes"]["total"] %></td>
-        <td><%= contributor["@attributes"]["pacs"] %></td>
-        <td><%= contributor["@attributes"]["indivs"] %></td>
+        <td><%= number_to_currency(contributor["@attributes"]["total"], :unit=>"$") %></td>
+        <td><%= number_to_currency(contributor["@attributes"]["pacs"], :unit=>"$") %></td>
+        <td><%= number_to_currency(contributor["@attributes"]["indivs"], :unit=>"$") %></td>
         </tr>
       <% end %>
     </tbody>
@@ -77,9 +78,9 @@ Last modified on: 4/25/2019
       <% industriesJSON["response"]["industries"]["industry"].each do | industry | %>
         <tr>
         <td><%= industry["industry_name"] %></td>
-        <td><%= industry["total"] %></td>
-        <td><%= industry["pacs"] %></td>
-        <td><%= industry["indivs"] %></td>
+        <td><%= number_to_currency(industry["total"], :unit=>"$") %></td>
+        <td><%= number_to_currency(industry["pacs"], :unit=>"$") %></td>
+        <td><%= number_to_currency(industry["indivs"], :unit=>"$") %></td>
         </tr>
       <% end %>
     </tbody>

@@ -6,6 +6,7 @@
 # Description: populates the database by accessing external APIs
 # Last modified on: 4/25/2019
 
+require './helper.rb'
 require 'json'
 require 'open-uri'
 require 'pp'
@@ -106,7 +107,7 @@ legislators.each do |legislator|
                      title: legislator['terms'][legislator['terms'].length - 1]['type'],
                      birthday: legislator['bio']['birthday'], gender: legislator['bio']['gender'],
                      cycle: candSummaryJSON['response']['summary']['@attributes']['cycle'],
-                     state: candSummaryJSON['response']['summary']['@attributes']['state'],
+                     state: getState(candSummaryJSON['response']['summary']['@attributes']['state']),
                      party: candSummaryJSON['response']['summary']['@attributes']['party'],
                      total_receipts: candSummaryJSON['response']['summary']['@attributes']['total'],
                      spent: candSummaryJSON['response']['summary']['@attributes']['spent'],
