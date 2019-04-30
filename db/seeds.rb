@@ -34,8 +34,8 @@ req_options = {
 Net::HTTP.start(proPubListSURI.hostname, proPubListSURI.port, req_options) do |http|
   senators = http.request(listRequest)
   senatorsJSON = JSON.parse(senators.body)
-  senatorsJSON['results'][0]['members'].each do |senator|
-    nameToProID[senator['first_name'] + ' ' + senator['last_name']] = senator['id']
+  senatorsJSON["results"][0]["members"].each do |senator|
+    nameToProID[senator["first_name"] + " " + senator["last_name"]] = senator["id"]
   end
 end
 
