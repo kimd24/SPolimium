@@ -6,12 +6,13 @@
 # Description: populates the database by accessing external APIs
 # Last modified on: 4/25/2019
 
-require './helper.rb'
+require_relative 'helper.rb'
 require 'json'
 require 'open-uri'
 require 'pp'
 require 'net/http'
 require 'httparty'
+require 'http'
 
 # hash for getting proPublicaID for a legislator
 nameToProID = {}
@@ -22,9 +23,9 @@ Legislator.delete_all if Rails.env.development?
 # Senators only for now
 # URI for executing curl
 proPubListSURI = URI.parse('https://api.propublica.org/congress/v1/115/senate/members.json')
-#proPubListHURI = URI.parse("https://api.propublica.org/congress/v1/115/house/members.json")
+# proPubListHURI = URI.parse("https://api.propublica.org/congress/v1/115/house/members.json")
 listRequest = Net::HTTP::Get.new(proPubListSURI, 'Content-Type' => 'application/json')
-listRequest['X-Api-Key'] = ENV['proPublicaKey']
+listRequest['X-Api-Key'] = Rails.application.credentials.dig(:pro_publica)
 
 # use ssl
 req_options = {
@@ -35,8 +36,8 @@ req_options = {
 Net::HTTP.start(proPubListSURI.hostname, proPubListSURI.port, req_options) do |http|
   senators = http.request(listRequest)
   senatorsJSON = JSON.parse(senators.body)
-  senatorsJSON["results"][0]["members"].each do |senator|
-    nameToProID[senator["first_name"] + " " + senator["last_name"]] = senator["id"]
+  senatorsJSON['results'][0]['members'].each do |senator|
+    nameToProID[senator['first_name'] + ' ' + senator['last_name']] = senator['id']
   end
 end
 
@@ -74,7 +75,7 @@ legislators.each do |legislator|
   # curl to ruby
   positionURI = URI.parse('https://api.propublica.org/congress/v1/members/' + nameToProID[legislator['name']['first'] + ' ' + legislator['name']['last']] + '/votes.json')
   voteRequest = Net::HTTP::Get.new(positionURI)
-  voteRequest['X-Api-Key'] = ENV['proPublicaKey']
+  voteRequest['X-Api-Key'] = Rails.application.credentials.dig(:pro_publica)
 
   req_options = {
     use_ssl: positionURI.scheme == 'https'
@@ -91,16 +92,18 @@ legislators.each do |legislator|
   industryJSON = {}
 
   # convert responses to hashes
-  unless legislator['id']['opensecrets'].nil?
-    candSummary = HTTParty.get('https://www.opensecrets.org/api/?method=candSummary&cid=' + legislator['id']['opensecrets'] + '&apikey=' + ENV['openSecretsKey'] + '&output=json')
-    candSummaryJSON = JSON.parse(candSummary.body)
+  next if legislator['id']['opensecrets'].nil?
 
-    candContrib = HTTParty.get('https://www.opensecrets.org/api/?method=candContrib&cid=' + legislator['id']['opensecrets'] + '&apikey=' + ENV['openSecretsKey'] + '&output=json')
-    contribJSON = JSON.parse(candContrib.body)
+  puts ('https://www.opensecrets.org/api/?method=candSummary&cid=' + legislator['id']['opensecrets'] + '&apikey=' + Rails.application.credentials.dig(:open_secrets) + '&output=json')
+  candSummary = HTTP.get('https://www.opensecrets.org/api/?method=candSummary&cid=' + legislator['id']['opensecrets'] + '&apikey=' + Rails.application.credentials.dig(:open_secrets) + '&output=json')
+  puts candSummary
+  candSummaryJSON = JSON.parse(candSummary.body)
 
-    candIndustry = HTTParty.get('https://www.opensecrets.org/api/?method=candIndustry&cid=' + legislator['id']['opensecrets'] + '&apikey=' + ENV['openSecretsKey'])
-    industryJSON = Hash.from_xml(candIndustry.body).to_json
-  end
+  candContrib = HTTP.get('https://www.opensecrets.org/api/?method=candContrib&cid=' + legislator['id']['opensecrets'] + '&apikey=' + Rails.application.credentials.dig(:open_secrets) + '&output=json')
+  contribJSON = JSON.parse(candContrib.body)
+
+  candIndustry = HTTP.get('https://www.opensecrets.org/api/?method=candIndustry&cid=' + legislator['id']['opensecrets'] + '&apikey=' + Rails.application.credentials.dig(:open_secrets))
+  industryJSON = Hash.from_xml(candIndustry.body).to_json
 
   # create active records
   Legislator.create!(name: legislator['name']['first'] + ' ' + legislator['name']['last'],
@@ -120,4 +123,5 @@ legislators.each do |legislator|
                      contact_form: legislator['terms'][legislator['terms'].length - 1]['contact_form'],
                      address: legislator['terms'][legislator['terms'].length - 1]['address'],
                      phone: legislator['terms'][legislator['terms'].length - 1]['phone'])
+
 end
